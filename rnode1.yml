@@ -1,0 +1,11 @@
+---
+
+- name: Explore
+  hosts: rnodes
+  become: yes
+  vars_files:
+    - priv/vault1.yml
+  tasks:
+    - name: ping
+      ping:
+
