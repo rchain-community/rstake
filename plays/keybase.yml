@@ -1,0 +1,32 @@
+---
+
+- name: Install and run Keybase
+  hosts: rnodes
+  become: yes
+  vars_files:
+    - ../priv/vault1.yml
+  tasks:
+    - name: Add Keybase code signing key
+      apt_key:
+        url: https://keybase.io/docs/server_security/code_signing_key.asc
+        id: 222B85B0F90BE2D24CFEB93F47484E50656D16C7
+        state: present
+    - name: Add Keybase Repository
+      apt_repository:
+        repo: deb http://prerelease.keybase.io/deb stable main
+        state: present
+    - name: Install keybase
+      apt: name=keybase update_cache=yes state=latest
+    - name: allow Keybase to keep running even when logged out
+      shell: loginctl enable-linger
+      become: false
+    - name: Start Keybase Services
+      systemd:
+        name: "{{ item }}"
+        state: started
+        user: yes
+      become: false
+      with_items:
+        - keybase
+        - kbfs
+        - keybase-redirector
