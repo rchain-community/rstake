@@ -8,17 +8,24 @@
   tasks:
     - name: ping
       ping:
-    - name: Explore Disks
-      shell: df -h
-      register: disk_usage
-    - name: Show disk info
-      debug: msg="{{ disk_usage.stdout_lines }}"
-    - debug: var=ansible_devices
-    - debug: var=ansible_memory_mb
-    - debug: var=ansible_processor
-    - debug: var=ansible_processor_cores
-    - debug: msg="total RAM is {{ ansible_memory_mb.real.total }} MB"
-    - fail: msg="not enough RAM - 32GB needed"
+
+    - name: Show hardware info
+      block:
+        - debug: msg="total RAM is {{ ansible_memory_mb.real.total }} MB"
+        - debug: var=ansible_mounts
+        - debug: var=ansible_processor_cores
+        - debug: var=ansible_processor
+    - name: Ensure sufficient RAM
+      fail: msg="not enough RAM - 32GB needed"
       when: ansible_memory_mb.real.total < 32000
-    - name: update apt packages
-      apt: update_cache=yes cache_valid_time=3600
+
+    - name: Show OS info
+      block:
+        - debug: var=ansible_distribution
+        - debug: var=ansible_distribution_version
+    - name: Get packages
+      shell: dpkg-query -f '${binary:Package}\n' -W
+      register: packages
+    - name: Print packages
+      debug: var=packages.stdout_lines
+
