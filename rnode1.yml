@@ -71,7 +71,20 @@
       block:
         - docker_container: name=hello image="hello-world"
           register: docker_hello
-        - debug: var=docker_hello
+        - debug: var=docker_hello.ansible_facts.docker_container.Created
+        - debug: var=docker_hello.ansible_facts.docker_container.Id
+        - debug: var=docker_hello.ansible_facts.docker_container.Image
+        - debug: var=docker_hello.ansible_facts.docker_container.State
 
+    # Feb 26 12:07 PM nuttzipper: the simplest way to start observer node using docker
+    # https://discordapp.com/channels/375365542359465989/682250097589092395/682287531756093460
     - name: Start RChain rnode container
-      docker_container: name=rnode1 image="rchain/rnode"
+      docker_container:
+        name: rnode
+        network_mode: host
+        volumes:
+          - /var/lib/rnode:/var/lib/rnode
+        image: "rchain/rnode:v0.9.22"
+        command: run --network mainnet --shard-id root --bootstrap "rnode://487e2c0c519b450b61253dea0a23b4d184a50089@node0.root-shard.mainnet.rchain.coop?protocol=40400&discovery=40404" --finalization-rate 1 --fault-tolerance-threshold -1 --synchrony-constraint-threshold 0 --fork-choice-stale-threshold 30minutes --fork-choice-check-if-stale-interval 30minutes --drop-peer-after-retries 0 --give-up-after-skipped 0
+      register: rnode_container
+    - debug: var=rnode_container
