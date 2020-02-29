@@ -29,3 +29,49 @@
     - name: Print packages
       debug: var=packages.stdout_lines
 
+    # ack: https://github.com/do-community/ansible-playbooks/blob/master/docker_ubuntu1804/playbook.yml
+    # https://docs.docker.com/install/linux/docker-ce/debian/
+    - name: Update the apt package index
+      apt: update_cache=yes cache_valid_time=3600 upgrade=dist
+    - name: Install packages to allow apt to use a repository over HTTPS
+      apt: name={{ item }} state=latest update_cache=yes
+      with_items:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - gnupg2
+        - software-properties-common
+        - python-pip
+
+    - name: "Add Docker’s official GPG key"
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        id: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/debian stretch stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt: update_cache=yes name={{ item }} state=latest
+      with_items:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+
+    - name: Prune outdated Docker Module for Python
+      pip: name=docker-py state=absent
+
+    - name: Install Docker Module for Python
+      pip: name=docker
+
+    - name: Verify that Docker Engine - Community is installed correctly
+      block:
+        - docker_container: name=hello image="hello-world"
+          register: docker_hello
+        - debug: var=docker_hello
+
+    - name: Start RChain rnode container
+      docker_container: name=rnode1 image="rchain/rnode"
