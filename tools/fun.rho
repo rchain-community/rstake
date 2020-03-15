@@ -1,0 +1,43 @@
+
+// control REV Vault from smart contract
+// https://rchain.atlassian.net/browse/RCHAIN-3260
+// https://github.com/rchain/rchain/blob/dev/casper/src/main/resources/MultiSigRevVault.rho
+
+new StakingPool,
+RevAddress(`rho:rev:address`),
+regInsert(`rho:registry:insertArbitrary`),
+regLookup(`rho:registry:lookup`),
+stdout(`rho:io:stdout`),
+RevVaultCh,
+AuthKeyCh,
+ListOpsCh
+in {
+  regLookup!(`rho:rchain:authKey`, *AuthKeyCh) |
+  for(
+    @(_, AuthKey) <- AuthKeyCh
+  ) {
+    stdout!({"AuthKey": AuthKey})
+  }
+  |
+
+
+  // // regLookup!(`rho:lang:listOps`, *ListOpsCh) |
+  
+  // // regLookup!(`rho:rchain:authKey`, *AuthKeyCh) |
+  // regLookup!(`rho:id:1qw5ehmq1x49dey4eadr1h4ncm361w3536asho7dr38iyookwcsp6i`, *AuthKeyCh) |
+  // // regLookup!(`rho:rchain:revVault`, *RevVaultCh) |
+  // for(
+  //   // @(_, ListOps) <- ListOpsCh;
+  //   @(_, AuthKey) <- AuthKeyCh //;
+  //   // @(_, RevVault) <- RevVaultCh
+  // ) {
+  new uriCh in {
+    regInsert!(*StakingPool, *uriCh) |
+    for (@uri <- uriCh) {
+      stdout!({"StakingPool uri": uri})
+    }
+  }
+  //  }
+}
+
+    // RevAddress!("fromUnforgeable", *unf, *revAddrCh)
