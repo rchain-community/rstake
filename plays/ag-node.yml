@@ -1,0 +1,21 @@
+---
+
+- name: Agoric Testnet Node
+  hosts: colos
+  become: yes
+  vars_files:
+    - ../priv/vault1.yml
+  tasks:
+    - name: ping
+      ping:
+    - name: Start Agoric SDK Container
+      docker_container:
+        name: ag-cosmos
+        network_mode: host
+        volumes:
+          - ag-chain-cosmos-state:/root/.ag-chain-cosmos
+        image: "agoric/agoric-sdk:latest"
+        command: start --pruning=nothing
+      register: ag_container
+    - debug: var=ag_container
+
