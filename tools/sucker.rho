@@ -1,0 +1,15 @@
+new return,
+regLookup(`rho:registry:lookup`),
+stdout(`rho:io:stdout`),
+csCh, candyCh
+in {
+    regLookup!(`rho:id:x7ngthd9iwiokffe7e4tnbmwtoa3i4cnkkuogzb5g81dwaq8qawzjg`, *csCh) |
+    for (CandyStore <- csCh) {
+        stdout!({"they say there's free candy": *CandyStore}) |
+        CandyStore!("freeCandy", *candyCh) | {
+            for (@candy <- candyCh) {
+                return!(candy)
+            }
+        }
+    }
+}

