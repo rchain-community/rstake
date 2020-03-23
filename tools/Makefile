@@ -4,7 +4,7 @@ RNODE=rnode --grpc-host 127.0.0.1
 #PMT=--phlo-limit 10000000 --phlo-price=1 --private-key-path=deploy.sk
 # RAW PRIVATE KEY! ONLY IN DEV MODE!
 FUN1SK=1d9d914e70e431f1f4ed05e0dc64715265fb05168563535d2d91471e92f844da
-PMT=--phlo-limit 10000000 --phlo-price=1 --private-key=$(FUN1SK)
+PMT=--phlo-limit 1000000000 --phlo-price=1 --private-key=$(FUN1SK)
 
 # https://www.gnu.org/software/make/manual/html_node/Pattern-Examples.html#Pattern-Examples
 %.rho.done: %.rho
@@ -14,11 +14,15 @@ PMT=--phlo-limit 10000000 --phlo-price=1 --private-key=$(FUN1SK)
 		$(RNODE) propose --print-unmatched-sends && \
 		touch $@
 
-all: fun1.sk fun.rho.done
+deploy: fun1.sk StakingPool.rho.done
+
+# Locker.rho.done
+
+#all: fun1.sk fun.rho.done
 
 
 validator: ~/.rnode/genesis
-	rnode run --host 127.0.0.1 --allow-private-addresses --standalone --synchrony-constraint-threshold 0.0 --validator-private-key $$(cat ~/.rnode/genesis/*.sk | tail -1)
+	rnode run --no-upnp --allow-private-addresses --host 127.0.0.1 --standalone --synchrony-constraint-threshold 0.0 --validator-private-key $$(cat ~/.rnode/genesis/*.sk | tail -1)
 
 ~/.rnode/genesis:
 	echo "kill (ctrl-c) this after: BondsParser$ - Created validator ..."
