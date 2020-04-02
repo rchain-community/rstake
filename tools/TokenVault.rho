@@ -15,13 +15,13 @@
  ----+------------+--------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------
  */
 new
-  RevVault, rs(`rho:registry:insertSigned:secp256k1`), uriOut,
+  TokenVault, ri(`rho:registry:insertArbitrary`), uriOut,
   rl(`rho:registry:lookup`), RevAddress(`rho:rev:address`),
   MakeMintCh, AuthKeyCh, EitherCh, TreeHashMapCh,
   _makeVault,
   _newVault,
   _create,
-  _revVault,
+  _tokenVault,
   _transferTemplate,
   _depositTemplate
 in {
@@ -33,19 +33,19 @@ in {
        @(_, AuthKey)  <- AuthKeyCh;
        @(_, Either)   <- EitherCh;
        TreeHashMap    <- TreeHashMapCh) {
-    // Each invocation of the RevVault contract uses a different mint.
+    // Each invocation of the TokenVault contract uses a different mint.
     new mintCh, vaultMapStore, initVault in {
       // Initializes the vaultMapStore.
       TreeHashMap!("init", 2, *vaultMapStore) |
       for (@vaultMap <- vaultMapStore) {
         // Called from RevGenerator:
-        //   RevVault!("init", *ret)
+        //   TokenVault!("init", *ret)
         new initContinue in {
           // REV vault initialization in genesis is done in batches.
           // In the last batch `initContinue` channel will not receive
-          // anything so further access to `RevVault(@"init", _)` is impossible.
+          // anything so further access to `TokenVault(@"init", _)` is impossible.
           initContinue!() |
-          contract RevVault(@"init", ret) = {
+          contract TokenVault(@"init", ret) = {
             for (<- initContinue) {
               ret!(*TreeHashMap, vaultMap, *initVault, *initContinue)
             }
@@ -63,7 +63,7 @@ in {
             }
           } |
 
-          contract RevVault(@"deployerAuthKey", deployerId, ret) = {
+          contract TokenVault(@"deployerAuthKey", deployerId, ret) = {
             new RevAddress(`rho:rev:address`), DeployerIdOps(`rho:rchain:deployerId:ops`),
                 revAddrCh, deployerPubKeyBytesCh
             in {
@@ -71,22 +71,22 @@ in {
               for (@deployerPubKeyBytes <- deployerPubKeyBytesCh) {
                 RevAddress!("fromPublicKey", deployerPubKeyBytes, *revAddrCh) |
                 for (@deployerRevAddress <- revAddrCh) {
-                  @AuthKey!("make", (*_revVault, deployerRevAddress), *ret)
+                  @AuthKey!("make", (*_tokenVault, deployerRevAddress), *ret)
                 }
               }
             }
           } |
           // Creates authKey from Rev vault name.
-          contract RevVault(@"unforgeableAuthKey", unf, ret) = {
+          contract TokenVault(@"unforgeableAuthKey", unf, ret) = {
             new RevAddress(`rho:rev:address`), revAddrCh in {
               RevAddress!("fromUnforgeable", *unf, *revAddrCh) |
               for (@unfRevAddress <- revAddrCh) {
-                @AuthKey!("make", (*_revVault, unfRevAddress), *ret)
+                @AuthKey!("make", (*_tokenVault, unfRevAddress), *ret)
               }
             }
           } |
           // Either retrieves or creates corresponding Rev vault either.
-          contract RevVault(@"findOrCreate", @revAddress, retCh) = {
+          contract TokenVault(@"findOrCreate", @revAddress, retCh) = {
             new revAddressValidCh, revAddressValidEitherCh in {
               // Validate Rev address first.
               RevAddress!("validate", revAddress, *revAddressValidCh) |
@@ -126,7 +126,7 @@ in {
           } |
           // Used during genesis to create PoS vault with initial balance = sum of initial bonds.
           // Can only be used to create the PoS vault, i.e. Rev address = "1111gW5kkGxHg7xDg6dRkZx2f7qxTizJzaCH9VEM1oJKWRvSX9Sk5".
-          for (@"createWithBalance", @"1111gW5kkGxHg7xDg6dRkZx2f7qxTizJzaCH9VEM1oJKWRvSX9Sk5", @amount, retCh <- RevVault) {
+          for (@"createWithBalance", @"1111gW5kkGxHg7xDg6dRkZx2f7qxTizJzaCH9VEM1oJKWRvSX9Sk5", @amount, retCh <- TokenVault) {
             new createVault, vaultCh in {
               _create!("1111gW5kkGxHg7xDg6dRkZx2f7qxTizJzaCH9VEM1oJKWRvSX9Sk5", *createVault, *vaultCh) |
               for (vaultRetCh <- createVault) {
@@ -166,24 +166,24 @@ in {
               @Either!("fromNillable <-", *purseCh, "Couldn't create purse", *eitherPurseCh) |
               @Either!("map2 <-", *eitherRevAddrCh, *eitherPurseCh,
                 for (@addr, purse, r <- mkVault) {
-                  new revVault in {
-                    _newVault!(*revVault, addr, *purse) |
-                    r!(bundle+{*revVault})
+                  new tokenVault in {
+                    _newVault!(*tokenVault, addr, *purse) |
+                    r!(bundle+{*tokenVault})
                   }
                 },
                 *ret
               )
             }
           } |
-          // Supplies balance, transfer, and setLog methods on revVault.
-          contract _newVault(revVault, @ownRevAddress, purse) = {
+          // Supplies balance, transfer, and setLog methods on tokenVault.
+          contract _newVault(tokenVault, @ownRevAddress, purse) = {
             new logStore in {
               logStore!(Nil) |
-              contract revVault(@"balance", ret) = {
+              contract tokenVault(@"balance", ret) = {
                 purse!("getBalance", *ret)
               } |
-              // Transfers from vault at revAddress to revVault.
-              contract revVault(@"transfer", @revAddress, @amount, authKey, ret) = {
+              // Transfers from vault at revAddress to tokenVault.
+              contract tokenVault(@"transfer", @revAddress, @amount, authKey, ret) = {
                 new ret2 in {
                   _transferTemplate!(ownRevAddress, *purse, revAddress, amount, *authKey, *ret2) |
                   for (@result <- ret2) {
@@ -202,9 +202,9 @@ in {
                 }
               } |
               // Set to Nil to disable logging
-              contract revVault(@"setLog", logCh, authKey, ret) = {
+              contract tokenVault(@"setLog", logCh, authKey, ret) = {
                 new authKeyValidCh in {
-                  @AuthKey!("check", *authKey, (*_revVault, ownRevAddress), *authKeyValidCh) |
+                  @AuthKey!("check", *authKey, (*_tokenVault, ownRevAddress), *authKeyValidCh) |
                   for (@result <- authKeyValidCh) {
                     if (result) {
                       new ack in {
@@ -223,8 +223,8 @@ in {
                   }
                 }
               } |
-              // Internal RevVault method for making deposits between purses.
-              contract @{ownRevAddress | bundle0{*_revVault}}(@"_deposit", depositPurse, retCh) = {
+              // Internal TokenVault method for making deposits between purses.
+              contract @{ownRevAddress | bundle0{*_tokenVault}}(@"_deposit", depositPurse, retCh) = {
                 _depositTemplate!(*purse, *depositPurse, *retCh)
               }
             }
@@ -240,7 +240,7 @@ in {
               RevAddress!("validate", revAddress, *revAddressValid) |
               @Either!("fromNillableError <-", *revAddressValid, *revAddressValidEither) |
               @Either!("fromBoolean", amount >= 0, "Amount must be non-negative", *amountNonNegative) |
-              @AuthKey!("check", *authKey, (*_revVault, ownRevAddress), *authKeyValidCh) |
+              @AuthKey!("check", *authKey, (*_tokenVault, ownRevAddress), *authKeyValidCh) |
               @Either!("fromBoolean <-", *authKeyValidCh, "Invalid AuthKey", *authKeyValidEitherCh) |
               @Either!("productR <-", *revAddressValidEither, *amountNonNegative, *parametersOkCh) |
               @Either!("productR <-", *parametersOkCh, *authKeyValidEitherCh, *parametersAndAuthOkCh) |
@@ -253,7 +253,7 @@ in {
               } |
               @Either!("flatMap <-", *eitherPurseCh, *doDeposit, *ret) |
               for (@p, retCh <- doDeposit) {
-                @{revAddress | bundle0{*_revVault}}!("_deposit", p, *retCh)
+                @{revAddress | bundle0{*_tokenVault}}!("_deposit", p, *retCh)
               }
             }
           } |
@@ -269,12 +269,10 @@ in {
             }
           } |
 
-          rs!(
-            "040f035630a5d2199184890b4b6b83440c842da0b6becca539f788f7b35d6e873561f673cd6ebe2e32236398a86f29dad992e8fba32534734300fcc5104bcfea0e".hexToBytes(),
-            (9223372036854775807, bundle+{*RevVault}),
-            "30450221008af89d676c4cd6b3d41e90da89b03a1e83f161fc8c4ad22c9edc903db3a9f4c402204e35e29e40a5f2b2f431d3cc63b87fb52c33716b3ce331a2a19b9660c3690c18".hexToBytes(),
-            *uriOut
-          )
+          ri!( (9223372036854775807, bundle+{*TokenVault}), *uriOut )
+          for ( uri <- *uriOut ) {
+           return!(("TokenVault URI", *uri )
+          }
         }
       }
     }
