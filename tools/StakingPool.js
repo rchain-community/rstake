@@ -20,7 +20,7 @@ const console = harden({
 });
 
 export default
-    function main() {
+async function main() {
     const [AuthKey, RevVault] = await Promise.all([
         E(registryLookup).run(`rho:rchain:authKey`),  // what's the default function name? apply? run? send?
         E(registryLookup).run(`rho:rchain:revVault`),
