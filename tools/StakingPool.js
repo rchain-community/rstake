@@ -7,23 +7,29 @@
  * TODO: back-translate test code.
  */
 
-import { bundlePlus, tuple } from 'rholangSyntax';
+import { bundlePlus, tuple, console } from '@rchain-community/js2rho';
+import { E } from '@agoric/eventual-send';
 
 import deployResult from 'rho:rchain:deployId';
 import RevAddress from 'rho:rev:address';
 import regInsert from 'rho:registry:insertArbitrary';
 import registryLookup from 'rho:registry:lookup';
+
+/* this will be built-in
+
 import stdout from 'rho:io:stdout';
 
 const console = harden({
-    log(it) { E(stdout).run(it); },
+    log(it) { E(stdout)(it); },
 });
+ */
 
 export default
 async function main() {
     const [AuthKey, RevVault] = await Promise.all([
-        E(registryLookup).run(`rho:rchain:authKey`),  // what's the default function name? apply? run? send?
-        E(registryLookup).run(`rho:rchain:revVault`),
+        // TODO: uri('rho:...') along with tuple
+        E(registryLookup)('rho:rchain:authKey'),
+        E(registryLookup)('rho:rchain:revVault'),
     ]);
 
     const StakingPool = harden({
@@ -58,5 +64,5 @@ async function main() {
     });
     const uri = await E(regInsert).run(bundlePlus(StakingPool));
     console.log({ "StakingPool uri": uri });
-    E(deployResult).run(uri);
+    E(deployResult)(uri);
 }
