@@ -1,7 +1,12 @@
-# rstake
-toward community operated RChain staking pool
+# rstake - toward a community operated RChain staking pool
 
-[shared brainstorming doc](https://docs.google.com/document/d/1stYOvtQIkIARIjLv9cJC4zXbcQXl8tEC38E5yIzgW5g/edit)
+Starting with a high-trust / low automation (plain text) contract,
+several of us have started on a staking pool. We aim toward
+increasingly mechanized enforcement of the contract, reducing need for
+trust and increasing scalability.
+
+See also:
+  - [shared brainstorming doc](https://docs.google.com/document/d/1stYOvtQIkIARIjLv9cJC4zXbcQXl8tEC38E5yIzgW5g/edit)
 
 ## Plain Text contract
 
