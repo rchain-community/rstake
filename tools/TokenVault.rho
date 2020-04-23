@@ -1,4 +1,5 @@
 /*
+This is a copy of https://github.com/rchain/rchain/blob/dev/casper/src/main/resources/RevVault.rho to be evoolved into generic token vaults for tokens other than rev.
  The table below describes the required computations and their dependencies
 
  No. | Dependency | Computation method | Result
